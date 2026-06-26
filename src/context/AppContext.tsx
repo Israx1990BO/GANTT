@@ -6,6 +6,31 @@ import {
   DEMO_PROJECTS, DEMO_TASKS, DEMO_NOTES, DEMO_EVENTS, CURRENT_USER,
 } from '@/lib/demo-data';
 
+/* ─── Persistent localStorage hook ─── */
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') return initialValue;
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? (JSON.parse(item) as T) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  const setValue = useCallback((value: T | ((prev: T) => T)) => {
+    setStoredValue(prev => {
+      const next = typeof value === 'function' ? (value as (p: T) => T)(prev) : value;
+      try {
+        window.localStorage.setItem(key, JSON.stringify(next));
+      } catch { /* ignore quota errors */ }
+      return next;
+    });
+  }, [key]);
+
+  return [storedValue, setValue] as const;
+}
+
 /* ─── Context shape ─── */
 interface AppContextType {
   projects: Project[];
@@ -43,10 +68,10 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const now = () => new Date().toISOString().split('T')[0];
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(DEMO_PROJECTS);
-  const [tasks, setTasks] = useState<Task[]>(DEMO_TASKS);
-  const [notes, setNotes] = useState<Note[]>(DEMO_NOTES);
-  const [events, setEvents] = useState<AgendaEvent[]>(DEMO_EVENTS);
+  const [projects, setProjects] = useLocalStorage<Project[]>('pf_projects', DEMO_PROJECTS);
+  const [tasks, setTasks] = useLocalStorage<Task[]>('pf_tasks', DEMO_TASKS);
+  const [notes, setNotes] = useLocalStorage<Note[]>('pf_notes', DEMO_NOTES);
+  const [events, setEvents] = useLocalStorage<AgendaEvent[]>('pf_events', DEMO_EVENTS);
 
   /* ─── Projects ─── */
   const addProject = useCallback((p: Omit<Project, 'id' | 'created_at' | 'created_by'>) => {
