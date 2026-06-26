@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { CURRENT_USER } from '@/lib/demo-data';
 import { getInitials } from '@/lib/utils';
 
@@ -19,10 +19,24 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
+  };
+
+  const handleLogout = async () => {
+    const isSupabaseConfigured =
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project.supabase.co';
+
+    if (isSupabaseConfigured) {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
+    router.push('/login');
   };
 
   return (
@@ -52,14 +66,24 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="sidebar-user">
-        <div className="sidebar-avatar">
-          {getInitials(CURRENT_USER.full_name)}
+      <div className="sidebar-footer">
+        <div className="sidebar-user">
+          <div className="sidebar-avatar">
+            {getInitials(CURRENT_USER.full_name)}
+          </div>
+          <div className="sidebar-user-info">
+            <div className="sidebar-user-name">{CURRENT_USER.full_name}</div>
+            <div className="sidebar-user-role">{CURRENT_USER.role}</div>
+          </div>
         </div>
-        <div className="sidebar-user-info">
-          <div className="sidebar-user-name">{CURRENT_USER.full_name}</div>
-          <div className="sidebar-user-role">{CURRENT_USER.role}</div>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="btn btn-ghost btn-sm"
+          style={{ width: '100%', marginTop: '8px', color: 'var(--text-tertiary)', justifyContent: 'center' }}
+          title="Cerrar sesión"
+        >
+          🚪 Cerrar Sesión
+        </button>
       </div>
     </aside>
   );

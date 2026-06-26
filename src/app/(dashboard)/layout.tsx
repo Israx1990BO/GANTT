@@ -1,16 +1,15 @@
 import Sidebar from '@/components/layout/Sidebar';
+import { AppProvider } from '@/context/AppContext';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="app-layout">
-      <Sidebar />
-      <main className="app-main">
-        {children}
-      </main>
-    </div>
+    <AppProvider>
+      <div className="app-layout">
+        <Sidebar />
+        <main className="app-main">
+          {children}
+        </main>
+      </div>
+    </AppProvider>
   );
 }
